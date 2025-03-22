@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Quiz Application</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .quiz-setup, .quiz-section, .results-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .setup-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .question-container {
+            margin-bottom: 30px;
+        }
+        
+        .question {
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .options {
+            list-style-type: none;
+        }
+        
+        .option {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .option:hover {
+            background-color: #e9ecef;
+        }
+        
+        .option.selected {
+            background-color: #d3e0ff;
+            border: 1px solid var(--primary);
+        }
+        
+        .option.correct {
+            background-color: rgba(72, 187, 120, 0.2);
+            border: 1px solid #48bb78;
+        }
+        
+        .option.incorrect {
+            background-color: rgba(245, 101, 101, 0.2);
+            border: 1px solid #f56565;
+        }
+        
+        .radio-custom {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+        }
+        
+        .option.selected .radio-custom::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .option-text {
+            flex-grow: 1;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .feedback.correct {
+            background-color: rgba(72, 187, 120, 0.2);
+            color: #2f855a;
+            display: block;
+        }
+        
+        .feedback.incorrect {
+            background-color: rgba(245, 101, 101, 0.2);
+            color: #c53030;
+            display: block;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .results-summary {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .results-summary h2 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .time-taken {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .results-list {
+            margin-top: 30px;
+        }
+        
+        .result-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 0;
+        }
+        
+        .result-question {
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .result-answer {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .result-answer.correct {
+            color: #2f855a;
+        }
+        
+        .result-answer.incorrect {
+            color: #c53030;
+        }
+        
+        .result-answer.correct-answer {
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .quiz-setup, .quiz-section, .results-section {
+                padding: 15px;
+            }
+            
+            .question {
+                font-size: 18px;
+            }
+            
+            .setup-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Online Quiz Application</h1>
+            <p>Upload a CSV file with questions and test your knowledge</p>
+        </header>
+        
+        <!-- Quiz Setup Section -->
+        <section class="quiz-setup" id="quizSetup">
+            <h2>Quiz Setup</h2>
+            <div class="file-upload" id="fileUploadArea">
+                <p>Click to upload a CSV file or drag and drop</p>
+                <p><small>CSV format: question,correct_answer,option1,option2,option3,...</small></p>
+                <input type="file" id="csvFileInput" accept=".csv">
+            </div>
+            <div id="fileInfo" class="hidden">
+                <p>File loaded: <span id="fileName"></span></p>
+                <p>Questions detected: <span id="questionCount"></span></p>
+            </div>
+            <div>
+                <label for="timerInput">Quiz Time (minutes): </label>
+                <input type="number" id="timerInput" min="1" max="120" value="10">
+            </div>
+            <div class="setup-buttons">
+                <button id="startQuizBtn" disabled>Start Quiz</button>
+                <button id="sampleDataBtn">Use Sample Data</button>
+            </div>
+        </section>
+        
+        <!-- Quiz Section -->
+        <section class="quiz-section hidden" id="quizSection">
+            <div class="timer" id="timerDisplay">
+                Time Remaining: 10:00
+            </div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div class="question-container" id="questionContainer">
+                <!-- Questions will be inserted here -->
+            </div>
+            <div class="navigation">
+                <button id="prevBtn" disabled>Previous</button>
+                <button id="nextBtn">Next Question</button>
+                <button id="finishBtn" class="hidden">Finish Quiz</button>
+            </div>
+        </section>
+        
+        <!-- Results Section -->
+        <section class="results-section hidden" id="resultsSection">
+            <div class="results-summary">
+                <h2>Quiz Results</h2>
+                <div class="score" id="finalScore">0%</div>
+                <div class="time-taken" id="timeTaken">Time: 00:00</div>
+                <button id="restartQuizBtn">Take Another Quiz</button>
+            </div>
+            <div class="results-list" id="resultsList">
+                <!-- Results will be inserted here -->
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elements
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const csvFileInput = document.getElementById('csvFileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const questionCount = document.getElementById('questionCount');
+            const startQuizBtn = document.getElementById('startQuizBtn');
+            const sampleDataBtn = document.getElementById('sampleDataBtn');
+            const timerInput = document.getElementById('timerInput');
+            const quizSetup = document.getElementById('quizSetup');
+            const quizSection = document.getElementById('quizSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const questionContainer = document.getElementById('questionContainer');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const progressBar = document.getElementById('progressBar');
+            const finalScore = document.getElementById('finalScore');
+            const timeTaken = document.getElementById('timeTaken');
+            const resultsList = document.getElementById('resultsList');
+            const restartQuizBtn = document.getElementById('restartQuizBtn');
+            
+            // Quiz state
+            let questions = [];
+            let currentQuestionIndex = 0;
+            let userAnswers = [];
+            let timerInterval;
+            let startTime;
+            let timeLimit;
+            let timeRemaining;
+            
+            // CSV parsing
+            function handleFileUpload(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const csv = e.target.result;
+                        questions = parseCSV(csv);
+                        
+                        fileName.textContent = file.name;
+                        questionCount.textContent = questions.length;
+                        fileInfo.classList.remove('hidden');
+                        startQuizBtn.disabled = false;
+                    } catch (error) {
+                        alert('Error parsing CSV file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            
+            function parseCSV(csv) {
+                const lines = csv.split('\n');
+                const questions = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+                    
+                    const values = lines[i].split(',').map(val => val.trim());
+                    if (values.length < 3) {
+                        throw new Error(`Line ${i+1} doesn't have enough columns`);
+                    }
+                    
+                    const question = values[0];
+                    const correctAnswer = values[1];
+                    const options = values.slice(2).filter(opt => opt !== '');
+                    
+                    if (!options.includes(correctAnswer)) {
+                        options.push(correctAnswer);
+                    }
+                    
+                    questions.push({
+                        question,
+                        options,
+                        correctAnswer
+                    });
+                }
+                
+                return questions;
+            }
+            
+            // Quiz functions
+            function startQuiz() {
+                timeLimit = parseInt(timerInput.value) * 60; // Convert minutes to seconds
+                timeRemaining = timeLimit;
+                startTime = new Date();
+                
+                // Randomize questions
+                questions = shuffleArray(questions);
+                
+                // Reset state
+                currentQuestionIndex = 0;
+                userAnswers = Array(questions.length).fill(null);
+                
+                // Update UI
+                quizSetup.classList.add('hidden');
+                quizSection.classList.remove('hidden');
+                
+                // Start timer
+                updateTimerDisplay();
+                timerInterval = setInterval(updateTimer, 1000);
+                
+                // Show first question
+                showQuestion(currentQuestionIndex);
+            }
+            
+            function showQuestion(index) {
+                const question = questions[index];
+                
+                // Shuffle options for this question
+                const shuffledOptions = shuffleArray([...question.options]);
+                
+                let html = `
+                    <div class="question">${index + 1}. ${question.question}</div>
+                    <ul class="options">
+                `;
+                
+                shuffledOptions.forEach((option, i) => {
+                    const isSelected = userAnswers[index] === option;
+                    let optionClass = 'option';
+                    if (isSelected) optionClass += ' selected';
+                    
+                    if (userAnswers[index] !== null) {
+                        if (option === question.correctAnswer) {
+                            optionClass += ' correct';
+                        } else if (isSelected && option !== question.correctAnswer) {
+                            optionClass += ' incorrect';
+                        }
+                    }
+                    
+                    html += `
+                        <li class="${optionClass}" data-option="${option}">
+                            <span class="radio-custom"></span>
+                            <span class="option-text">${option}</span>
+                        </li>
+                    `;
+                });
+                
+                html += `</ul>`;
+                
+                if (userAnswers[index] !== null) {
+                    const isCorrect = userAnswers[index] === question.correctAnswer;
+                    html += `
+                        <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                            ${isCorrect ? 'Correct!' : 'Incorrect! The correct answer is ' + question.correctAnswer}
+                        </div>
+                    `;
+                }
+                
+                questionContainer.innerHTML = html;
+                
+                // Add event listeners to options
+                document.querySelectorAll('.option').forEach(option => {
+                    if (userAnswers[index] === null) {
+                        option.addEventListener('click', selectOption);
+                    }
+                });
+                
+                // Update navigation buttons
+                prevBtn.disabled = index === 0;
+                
+                if (index === questions.length - 1) {
+                    nextBtn.classList.add('hidden');
+                    finishBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    finishBtn.classList.add('hidden');
+                }
+                
+                // Update progress bar
+                progressBar.style.width = `${((index + 1) / questions.length) * 100}%`;
+            }
+            
+            function selectOption(e) {
+                const selectedOption = e.currentTarget.dataset.option;
+                userAnswers[currentQuestionIndex] = selectedOption;
+                
+                // Mark as answered
+                document.querySelectorAll('.option').forEach(option => {
+                    option.classList.remove('selected');
+                    option.removeEventListener('click', selectOption);
+                });
+                
+                e.currentTarget.classList.add('selected');
+                
+                // Show feedback immediately
+                const isCorrect = selectedOption === questions[currentQuestionIndex].correctAnswer;
+                
+                document.querySelectorAll('.option').forEach(option => {
+                    const optionValue = option.dataset.option;
+                    if (optionValue === questions[currentQuestionIndex].correctAnswer) {
+                        option.classList.add('correct');
+                    } else if (optionValue === selectedOption && !isCorrect) {
+                        option.classList.add('incorrect');
+                    }
+                });
+                
+                const feedbackHtml = `
+                    <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                        ${isCorrect ? 'Correct!' : 'Incorrect! The correct answer is ' + questions[currentQuestionIndex].correctAnswer}
+                    </div>
+                `;
+                
+                questionContainer.insertAdjacentHTML('beforeend', feedbackHtml);
+            }
+            
+            function updateTimer() {
+                timeRemaining--;
+                updateTimerDisplay();
+                
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                }
+            }
+            
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                timerDisplay.textContent = `Time Remaining: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                if (timeRemaining <= 60) {
+                    timerDisplay.style.color = 'var(--danger)';
+                }
+            }
+            
+            function finishQuiz() {
+                clearInterval(timerInterval);
+                
+                // Calculate score
+                const correctAnswers = userAnswers.filter((answer, index) => 
+                    answer === questions[index].correctAnswer
+                ).length;
+                
+                const score = Math.round((correctAnswers / questions.length) * 100);
+                
+                // Calculate time taken
+                const endTime = new Date();
+                const timeDiff = Math.floor((endTime - startTime) / 1000); // in seconds
+                const timeUsed = timeLimit - timeRemaining;
+                const actualTime = Math.min(timeDiff, timeLimit);
+                
+                const minutes = Math.floor(actualTime / 60);
+                const seconds = actualTime % 60;
+                
+                // Update results
+                finalScore.textContent = `${score}%`;
+                timeTaken.textContent = `Time: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                // Generate results list
+                let resultsHtml = '';
+                questions.forEach((question, index) => {
+                    const userAnswer = userAnswers[index];
+                    const isCorrect = userAnswer === question.correctAnswer;
+                    
+                    resultsHtml += `
+                        <div class="result-item">
+                            <div class="result-question">${index + 1}. ${question.question}</div>
+                            <div class="result-answer ${isCorrect ? 'correct' : 'incorrect'}">
+                                Your answer: ${userAnswer || 'Not answered'}
+                            </div>
+                    `;
+                    
+                    if (!isCorrect) {
+                        resultsHtml += `
+                            <div class="result-answer correct-answer">
+                                Correct answer: ${question.correctAnswer}
+                            </div>
+                        `;
+                    }
+                    
+                    resultsHtml += `</div>`;
+                });
+                
+                resultsList.innerHTML = resultsHtml;
+                
+                // Show results section
+                quizSection.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+            }
+            
+            // Utility functions
+            function shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+            
+            // Sample data
+            function loadSampleData() {
+                const sampleCSV = `What is the capital of France?,Paris,London,Berlin,Madrid,Rome
+Which planet is known as the Red Planet?,Mars,Venus,Jupiter,Mercury,Saturn
+What is the largest mammal in the world?,Blue Whale,Elephant,Giraffe,Hippopotamus,Rhinoceros
+Who wrote "Romeo and Juliet"?,William Shakespeare,Charles Dickens,Jane Austen,Mark Twain,Leo Tolstoy
+What is the chemical symbol for gold?,Au,Ag,Fe,Cu,Hg
+Which country is home to the Great Barrier Reef?,Australia,Brazil,Mexico,India,Japan
+What is the largest organ in the human body?,Skin,Heart,Liver,Brain,Lungs
+Which element has the chemical symbol "O"?,Oxygen,Gold,Iron,Carbon,Hydrogen
+In which year did World War II end?,1945,1939,1941,1950,1918
+What is the tallest mountain in the world?,Mount Everest,K2,Kangchenjunga,Lhotse,Makalu`;
+                
+                questions = parseCSV(sampleCSV);
+                fileName.textContent = "Sample Data";
+                questionCount.textContent = questions.length;
+                fileInfo.classList.remove('hidden');
+                startQuizBtn.disabled = false;
+            }
+            
+            // Event listeners
+            fileUploadArea.addEventListener('click', () => {
+                csvFileInput.click();
+            });
+            
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = 'var(--primary)';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.style.borderColor = '#ddd';
+            });
+            
+            fileUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = '#ddd';
+                if (e.dataTransfer.files.length) {
+                    handleFileUpload(e.dataTransfer.files[0]);
+                }
+            });
+            
+            csvFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFileUpload(e.target.files[0]);
+                }
+            });
+            
+            startQuizBtn.addEventListener('click', startQuiz);
+            sampleDataBtn.addEventListener('click', loadSampleData);
+            
+            prevBtn.addEventListener('click', () => {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    showQuestion(currentQuestionIndex);
+                }
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    showQuestion(currentQuestionIndex);
+                }
+            });
+            
+            finishBtn.addEventListener('click', finishQuiz);
+            restartQuizBtn.addEventListener('click', () => {
+                resultsSection.classList.add('hidden');
+                quizSetup.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
