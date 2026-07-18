@@ -2532,7 +2532,7 @@
             num: 333,
             text: "Which of the following statements regarding <span class=\"key-word\">free flaps</span> are <span class=\"key-word\">true</span>?",
             options: ["A. Free flap are the best way of reconstructing major composite loss of tissue.", "B. Surgical expertise and equipment in microsurgery are essential for the use of free flaps.", "C. Debridement of the area of reconstruction is necessary for the use of free flaps.", "D. Major donor site morbidity is a possible disadvantage in free-flap surgery.", "E. It usually takes more time to perform the surgery associated with a microsurgical procedure unless the surgeon is experienced."],
-            answer: ["A", "B", "C", "D", "E"]
+            answer: ["A", "B", "C", "D"]
         }, {
             id: "Q334",
             num: 334,
@@ -2913,7 +2913,7 @@
             num: 390,
             text: "Which of the following statements are <span class=\"key-word\">untrue</span>?",
             options: ["A. The small bowel receives approximately 7–8 L of fluid/day.", "B. Malabsorption is inevitable if 30 percent of the small intestine is removed.", "C. The jejunum is vital in the absorption of nutrients.", "D. Vitamin B12 and bile salts are absorbed in the ileum.", "E. The enterohepatic circulation of bile salts is essential to maintain the bile salt pool."],
-            answer: "B"
+            answer: ["B", "C"]
         }, {
             id: "Q391",
             num: 391,
@@ -3795,7 +3795,7 @@
         const totalQs = sectionsData.reduce((acc, sec) => acc + sec.questions.length, 0);
         document.getElementById('mode-global').textContent = `Shuffle All (${totalQs} Qs)`;
         renderSidebar();
-        loadQuiz();
+        loadQuiz(true); // Scroll to top on initial page load
     });
 
     function shuffleArray(array) {
@@ -3814,7 +3814,7 @@
         document.getElementById(`mode-${mode}`).classList.add('active');
         if (mode === 'section') prepareSectionQuiz();
         else if (mode === 'global') prepareGlobalQuiz();
-        loadQuiz();
+        loadQuiz(true); // Scroll to top when switching modes
     }
 
     function prepareSectionQuiz() {
@@ -3865,7 +3865,7 @@
         currentSectionIdx = index;
         currentQuestionIdx = 0;
         if (quizMode === 'section') prepareSectionQuiz();
-        loadQuiz();
+        loadQuiz(true); // Scroll to top when selecting a chapter
     }
 
     function getSectionProgressText(secItem) {
@@ -3882,28 +3882,28 @@
     }
 
     // ----- auto‑scroll -----
-  function scrollToQuestionBox() {
-    setTimeout(() => {
-        const questionBox = document.querySelector('.question-box');
-        if (!questionBox) return;
+    function scrollToQuestionBox() {
+        setTimeout(() => {
+            const questionBox = document.querySelector('.question-box');
+            if (!questionBox) return;
 
-        // If the question has been answered, scroll to the navigation buttons
-        // so they align with the bottom of the viewport.
-        if (questionBox.classList.contains('correct') || questionBox.classList.contains('incorrect')) {
-            const navButtons = document.getElementById('nav-buttons');
-            if (navButtons) {
-                navButtons.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                return;
+            // If the question has been answered, scroll to the navigation buttons
+            // so they align with the bottom of the viewport.
+            if (questionBox.classList.contains('correct') || questionBox.classList.contains('incorrect')) {
+                const navButtons = document.getElementById('nav-buttons');
+                if (navButtons) {
+                    navButtons.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    return;
+                }
             }
-        }
 
-        // Default: scroll to the top of the question box
-        questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-}
+            // Default: scroll to the top of the question box
+            questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+    }
 
     // ----- load / render -----
-    function loadQuiz() {
+    function loadQuiz(shouldScroll = false) { // set default parameter to false
         tempMultiSelections = [];
         const view = document.getElementById('quiz-view');
         let html = '';
@@ -3959,7 +3959,9 @@
             `;
         }
         view.innerHTML = html;
-        scrollToQuestionBox();
+        if (shouldScroll) {
+            scrollToQuestionBox(); // only trigger scroll when requested
+        }
     }
 
     function renderQuestionBox(q, displayIdx, totalLen) {
@@ -4050,7 +4052,7 @@
             tempBox.innerHTML = renderQuestionBox(qObj, displayIdx, list.length);
             const qBox = document.getElementById(`q-box-${qId}`);
             if (qBox) qBox.parentNode.replaceChild(tempBox.firstElementChild, qBox);
-            scrollToQuestionBox(); // scroll after toggle
+            // Removed scrollToQuestionBox() call to avoid scrolling on toggle selection
         }
     }
 
@@ -4066,7 +4068,7 @@
         userResponses[qId] = { selected: [...tempMultiSelections], correct: isCorrect };
         saveToStorage();
         updateSidebarBadges();
-        loadQuiz(); // full reload → scroll inside
+        loadQuiz(false); // Do not scroll so the user can review results on screen
     }
 
     function submitAnswer(qId, selectedOption) {
@@ -4078,7 +4080,7 @@
         userResponses[qId] = { selected: selectedOption, correct: isCorrect };
         saveToStorage();
         updateSidebarBadges();
-        loadQuiz(); // full reload → scroll inside
+        loadQuiz(false); // Do not scroll so the user can review results on screen
     }
 
     // ----- navigation -----
@@ -4087,14 +4089,14 @@
         currentQuestionIdx += direction;
         if (currentQuestionIdx < 0) currentQuestionIdx = 0;
         if (currentQuestionIdx >= maxLen) currentQuestionIdx = maxLen - 1;
-        loadQuiz(); // scroll inside
+        loadQuiz(true); // Scroll to top when changing questions
     }
 
     function navigateGlobal(direction) {
         globalFocusedQIdx += direction;
         if (globalFocusedQIdx < 0) globalFocusedQIdx = 0;
         if (globalFocusedQIdx >= randomizedQuestions.length) globalFocusedQIdx = randomizedQuestions.length - 1;
-        loadQuiz(); // scroll inside
+        loadQuiz(true); // Scroll to top when changing questions
     }
 
     // ----- reset -----
@@ -4106,7 +4108,7 @@
             updateSidebarBadges();
             currentQuestionIdx = 0;
             if (quizMode === 'section') prepareSectionQuiz();
-            loadQuiz(); // scroll inside
+            loadQuiz(true); // Scroll to top after reset
         }
     }
 
@@ -4118,7 +4120,7 @@
             currentQuestionIdx = 0;
             globalFocusedQIdx = 0;
             if (quizMode === 'global') prepareGlobalQuiz();
-            loadQuiz(); // scroll inside
+            loadQuiz(true); // Scroll to top after reset
         }
     }
 </script>
