@@ -3411,7 +3411,7 @@
                 }]
             }];
 
-            // ===== QUIZ ENGINE =====
+// ===== QUIZ ENGINE =====
             let currentSectionIdx = 0;
             let currentQuestionIdx = 0;
             let quizMode = 'standard';
@@ -3451,14 +3451,12 @@
                 return array;
             }
 
-            // ----- global renderQuestionBox (moved out of loadQuiz) -----
             function renderQuestionBox(q, displayIdx, totalLen) {
                 const response = userResponses[q.id];
                 const isCorrect = response ? response.correct : null;
                 const selectedVal = response ? response.selected : null;
                 const isMulti = Array.isArray(q.answer);
 
-                // section name fallback: q.secName or current chapter name
                 const secName = q.secName || sectionsData[currentSectionIdx]?.name || '';
 
                 let boxClass = 'question-box focused-box';
@@ -3547,50 +3545,50 @@
             }
 
             function prepareWrongQuiz() {
-    randomizedQuestions = [];
-    
-    // Scan all chapters for incorrect answers
-    sectionsData.forEach(sec => {
-        sec.questions.forEach((q, idx) => {
-            const response = userResponses[q.id];
-            if (response && !response.correct) {
-                randomizedQuestions.push({
-                    ...q,
-                    originalIdx: idx,
-                    secId: sec.id,
-                    secName: sec.name
-                });
-            }
-        });
-    });
-
-    if (randomizedQuestions.length === 0) {
-        alert("You have no incorrect questions across any of the chapters!");
-        setQuizMode('standard');
-        return;
-    }
-
-    // Store IDs of wrong questions and shuffle them globally
-    wrongQuizIds = randomizedQuestions.map(q => q.id);
-    shuffleArray(randomizedQuestions);
-}
-
-            function resetWrongInCurrentChapter() {
-                if (confirm("Reset and retry only the incorrect questions in this chapter?")) {
-                    wrongQuizIds.forEach(id => {
-                        delete userResponses[id];
+                randomizedQuestions = [];
+                sectionsData.forEach(sec => {
+                    sec.questions.forEach((q, idx) => {
+                        const response = userResponses[q.id];
+                        if (response && !response.correct) {
+                            randomizedQuestions.push({
+                                ...q,
+                                originalIdx: idx,
+                                secId: sec.id,
+                                secName: sec.name
+                            });
+                        }
                     });
-                    saveToStorage();
-                    updateSidebarBadges();
-                    currentQuestionIdx = 0;
-                    loadQuiz(true);
+                });
+
+                if (randomizedQuestions.length === 0) {
+                    alert("You have no incorrect questions across any of the chapters!");
+                    setQuizMode('standard');
+                    return;
+                }
+
+                wrongQuizIds = randomizedQuestions.map(q => q.id);
+                shuffleArray(randomizedQuestions);
+            }
+
+            function resetWrongGlobally() {
+                if (confirm("Reset and retry all incorrect questions across all chapters?")) {
+                    if (wrongQuizIds && wrongQuizIds.length > 0) {
+                        wrongQuizIds.forEach(id => {
+                            delete userResponses[id];
+                        });
+                        saveToStorage();
+                        updateSidebarBadges();
+                        currentQuestionIdx = 0;
+                        loadQuiz(true);
+                    } else {
+                        alert("No incorrect questions are currently loaded to reset.");
+                    }
                 }
             }
 
             function prepareSectionQuiz() {
                 const activeSec = sectionsData[currentSectionIdx];
-                randomizedQuestions = activeSec.questions.map((q, idx) => ({ ...q, originalIdx: idx, secId: activeSec.id,
-                    secName: activeSec.name }));
+                randomizedQuestions = activeSec.questions.map((q, idx) => ({ ...q, originalIdx: idx, secId: activeSec.id, secName: activeSec.name }));
                 shuffleArray(randomizedQuestions);
             }
 
@@ -3633,10 +3631,21 @@
             }
 
             function handleSidebarClick(index) {
-                if (quizMode === 'global') setQuizMode('standard');
                 currentSectionIdx = index;
                 currentQuestionIdx = 0;
-                if (quizMode === 'section') prepareSectionQuiz();
+
+                // Automatically switch to Standard mode if currently in Global or Wrong Qs mode
+                if (quizMode === 'global' || quizMode === 'wrong') {
+                    quizMode = 'standard';
+                    // Update the active state on the mode buttons in the UI
+                    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+                    document.getElementById('mode-standard').classList.add('active');
+                }
+
+                if (quizMode === 'section') {
+                    prepareSectionQuiz();
+                }
+
                 loadQuiz(true);
             }
 
@@ -3723,12 +3732,12 @@
                     const q = questionsToRender[currentQuestionIdx] || questionsToRender[0];
 
                     let resetButtonsHtml = `<button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>`;
-if (quizMode === 'wrong') {
-    resetButtonsHtml = `
-        <button class="reset-btn" style="background-color: var(--danger);" onclick="resetWrongGlobally()">Reset & Retry All Wrong</button>
-        <button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>
-    `;
-}
+                    if (quizMode === 'wrong') {
+                        resetButtonsHtml = `
+                            <button class="reset-btn" style="background-color: var(--danger);" onclick="resetWrongGlobally()">Reset & Retry All Wrong</button>
+                            <button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>
+                        `;
+                    }
 
                     html += `
                         <div class="score-banner">
@@ -3781,8 +3790,7 @@ if (quizMode === 'wrong') {
 
                 const sortedSelected = [...tempMultiSelections].sort();
                 const sortedAnswer = [...qObj.answer].sort();
-                const isCorrect = sortedSelected.length === sortedAnswer.length && sortedSelected.every((val, i) => val ===
-                    sortedAnswer[i]);
+                const isCorrect = sortedSelected.length === sortedAnswer.length && sortedSelected.every((val, i) => val === sortedAnswer[i]);
 
                 userResponses[qId] = { selected: [...tempMultiSelections], correct: isCorrect };
                 saveToStorage();
