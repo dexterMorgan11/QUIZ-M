@@ -350,7 +350,7 @@
         <div class="mode-container">
             <button class="mode-btn active" id="mode-standard" onclick="setQuizMode('standard')">Standard Sequential</button>
             <button class="mode-btn" id="mode-section" onclick="setQuizMode('section')">Shuffle Current Chapter</button>
-            <button class="mode-btn" id="mode-wrong" onclick="setQuizMode('wrong')">Wrong Qs (Chapter)</button>
+            <button class="mode-btn" id="mode-wrong" onclick="setQuizMode('wrong')">Wrong Qs (Global)</button>
             <button class="mode-btn" id="mode-global" onclick="setQuizMode('global')">Shuffle All (560 Qs)</button>
         </div>
 
@@ -2038,7 +2038,7 @@
                     num: 262,
                     text: "Which of the following statements regarding <span class=\"key-word\">burn depth</span> are <span class=\"key-word\">true</span>?",
                     options: ["A. The depth of a burn together with percentage of TBSA and smoke inhalation are key parameters in the assessment and management of a burn.", "B. Alkalis, including cement, usually result in superficial burns.", "C. Fat burns are deeper than electrical contact burns.", "D. Capillary filling is not present in superficial burns.", "E. Deep dermal burns take a maximum of 2 weeks to heal without surgery."],
-                    answer: ["A"]
+                    answer: "A"
                 }, {
                     id: "Q264",
                     num: 264,
@@ -2182,7 +2182,7 @@
                     num: 299,
                     text: "Which of the following statements are <span class=\"key-word\">true</span>?",
                     options: ["A. Copious water lavage is the best first-aid measure for phosphorus burns.", "B. Elemental sodium burns should not be treated by water lavage.", "C. Damage from alkalis is usually less than with acids.", "D. Hydrofluoric acid burns can be associated with hypercalcemia.", "E. Local radiation burns causing ulceration need excision and split-skin graft repair"],
-                    answer: ["B"]
+                    answer: "B"
                 }, {
                     id: "Q302",
                     num: 302,
@@ -2205,7 +2205,7 @@
                     id: "Q305",
                     num: 305,
                     text: "Which of the following skin grafts has <span class=\"key-word\">least contraction</span>?",
-                    options: ["A. Full thickness.", "B. Split thickness."],
+                    options: ["A. Full thickness.", "B. Split thickness.", "C. Both have equal contraction.", "D. All of the above."],
                     answer: "A"
                 }, {
                     id: "Q306",
@@ -3547,25 +3547,33 @@
             }
 
             function prepareWrongQuiz() {
-                const activeSec = sectionsData[currentSectionIdx];
-                const wrongQs = activeSec.questions.filter(q => userResponses[q.id] && !userResponses[q.id].correct);
-
-                if (wrongQs.length === 0) {
-                    alert("You have no incorrect questions in this chapter!");
-                    setQuizMode('standard');
-                    return;
-                }
-
-                wrongQuizIds = wrongQs.map(q => q.id);
-                randomizedQuestions = activeSec.questions
-                    .filter(q => wrongQuizIds.includes(q.id))
-                    .map((q, idx) => ({
-                        ...q,
-                        originalIdx: idx,
-                        secId: activeSec.id,
-                        secName: activeSec.name
-                    }));
+    randomizedQuestions = [];
+    
+    // Scan all chapters for incorrect answers
+    sectionsData.forEach(sec => {
+        sec.questions.forEach((q, idx) => {
+            const response = userResponses[q.id];
+            if (response && !response.correct) {
+                randomizedQuestions.push({
+                    ...q,
+                    originalIdx: idx,
+                    secId: sec.id,
+                    secName: sec.name
+                });
             }
+        });
+    });
+
+    if (randomizedQuestions.length === 0) {
+        alert("You have no incorrect questions across any of the chapters!");
+        setQuizMode('standard');
+        return;
+    }
+
+    // Store IDs of wrong questions and shuffle them globally
+    wrongQuizIds = randomizedQuestions.map(q => q.id);
+    shuffleArray(randomizedQuestions);
+}
 
             function resetWrongInCurrentChapter() {
                 if (confirm("Reset and retry only the incorrect questions in this chapter?")) {
@@ -3715,12 +3723,12 @@
                     const q = questionsToRender[currentQuestionIdx] || questionsToRender[0];
 
                     let resetButtonsHtml = `<button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>`;
-                    if (quizMode === 'wrong') {
-                        resetButtonsHtml = `
-                            <button class="reset-btn" style="background-color: var(--danger);" onclick="resetWrongInCurrentChapter()">Reset & Retry Wrong</button>
-                            <button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>
-                        `;
-                    }
+if (quizMode === 'wrong') {
+    resetButtonsHtml = `
+        <button class="reset-btn" style="background-color: var(--danger);" onclick="resetWrongGlobally()">Reset & Retry All Wrong</button>
+        <button class="reset-btn" onclick="resetActiveSectionQuiz()">Reset Chapter</button>
+    `;
+}
 
                     html += `
                         <div class="score-banner">
